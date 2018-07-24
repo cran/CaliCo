@@ -35,18 +35,24 @@ during the estimation process.
 
 \item{\code{bsup}}{the upper bound of the parameters for the DOE}
 
-\item{\code{opt.emul}}{a list of parameter for the surrogate \itemize{
+\item{\code{opt.gp}}{a list of parameter for the surrogate (default NULL) \itemize{
+\item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
+\item{\strong{DOE}}{ design of experiments for the surrogate (default value NULL)}}}
+
+\item{\code{opt.emul}}{a list of parameter to establish the DOE (default NULL) \itemize{
 \item{\strong{p}}{ the number of parameter in the model (default value 1)}
 \item{\strong{n.emul}}{ the number of points for constituting the Design Of Experiments (DOE) (default value 100)}
-\item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
 \item{\strong{binf}}{ the lower bound of the parameter vector (default value 0)}
-\item{\strong{bsup}}{ the upper bound of the parameter vector (default value 1)}
-\item{\strong{DOE}}{ design of experiments for the surrogate (default value NULL)}}}
+\item{\strong{bsup}}{ the upper bound of the parameter vector (default value 1)}}}
+
+\item{\code{opt.sim}}{a list of parameter containing output of the code and corresponding DOE \itemize{
+\item{\strong{Ysim}}{ Output of the code}
+\item{\strong{DOEsim}}{ DOE corresponding to the output of the code}}}
 
 \item{\code{model}}{the model choice (see \code{\link{model}} for more specification).}
 
 \item{\code{opt.disc}}{a list of parameter for the discrepancy \itemize{
-\item{\strong{kernel.type}}{ the kernel choosen for the Gaussian process}}}
+\item{\strong{kernel.type}}{ the kernel chosen for the Gaussian process}}}
 }}
 
 \keyword{datasets}

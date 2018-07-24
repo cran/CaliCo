@@ -7,42 +7,42 @@
 using namespace Rcpp;
 
 // MetropolisHastingsCpp
-List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf, arma::vec binf, arma::vec bsup, Function LogTest, int stream);
-RcppExport SEXP _CaliCo_MetropolisHastingsCpp(SEXP NgibbsSEXP, SEXP NmhSEXP, SEXP theta_initSEXP, SEXP kSEXP, SEXP SIGMASEXP, SEXP YfSEXP, SEXP binfSEXP, SEXP bsupSEXP, SEXP LogTestSEXP, SEXP streamSEXP) {
+List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec r, arma::mat SIGMA, arma::vec Yf, arma::vec binf, arma::vec bsup, Function LogTest, int stream);
+RcppExport SEXP _CaliCo_MetropolisHastingsCpp(SEXP NgibbsSEXP, SEXP NmhSEXP, SEXP theta_initSEXP, SEXP rSEXP, SEXP SIGMASEXP, SEXP YfSEXP, SEXP binfSEXP, SEXP bsupSEXP, SEXP LogTestSEXP, SEXP streamSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type Ngibbs(NgibbsSEXP);
     Rcpp::traits::input_parameter< int >::type Nmh(NmhSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type theta_init(theta_initSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type k(kSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type r(rSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type SIGMA(SIGMASEXP);
     Rcpp::traits::input_parameter< arma::vec >::type Yf(YfSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type binf(binfSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type bsup(bsupSEXP);
     Rcpp::traits::input_parameter< Function >::type LogTest(LogTestSEXP);
     Rcpp::traits::input_parameter< int >::type stream(streamSEXP);
-    rcpp_result_gen = Rcpp::wrap(MetropolisHastingsCpp(Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream));
+    rcpp_result_gen = Rcpp::wrap(MetropolisHastingsCpp(Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup, LogTest, stream));
     return rcpp_result_gen;
 END_RCPP
 }
 // MetropolisHastingsCppD
-List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf, arma::vec binf, arma::vec bsup, Function LogTest, int stream);
-RcppExport SEXP _CaliCo_MetropolisHastingsCppD(SEXP NgibbsSEXP, SEXP NmhSEXP, SEXP theta_initSEXP, SEXP kSEXP, SEXP SIGMASEXP, SEXP YfSEXP, SEXP binfSEXP, SEXP bsupSEXP, SEXP LogTestSEXP, SEXP streamSEXP) {
+List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec r, arma::mat SIGMA, arma::vec Yf, arma::vec binf, arma::vec bsup, Function LogTest, int stream);
+RcppExport SEXP _CaliCo_MetropolisHastingsCppD(SEXP NgibbsSEXP, SEXP NmhSEXP, SEXP theta_initSEXP, SEXP rSEXP, SEXP SIGMASEXP, SEXP YfSEXP, SEXP binfSEXP, SEXP bsupSEXP, SEXP LogTestSEXP, SEXP streamSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type Ngibbs(NgibbsSEXP);
     Rcpp::traits::input_parameter< int >::type Nmh(NmhSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type theta_init(theta_initSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type k(kSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type r(rSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type SIGMA(SIGMASEXP);
     Rcpp::traits::input_parameter< arma::vec >::type Yf(YfSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type binf(binfSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type bsup(bsupSEXP);
     Rcpp::traits::input_parameter< Function >::type LogTest(LogTestSEXP);
     Rcpp::traits::input_parameter< int >::type stream(streamSEXP);
-    rcpp_result_gen = Rcpp::wrap(MetropolisHastingsCppD(Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream));
+    rcpp_result_gen = Rcpp::wrap(MetropolisHastingsCppD(Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup, LogTest, stream));
     return rcpp_result_gen;
 END_RCPP
 }

@@ -1,28 +1,29 @@
 #' Bayesian calibration for computational codes
 #'
-#' The CaliCo package provides three categories of important functions:
-#' \code{\link{model}}, \code{\link{prior}}, \code{\link{calibrate}} and \code{\link{prediction}}.
+#' The CaliCo package provides five main functions:
+#' \code{\link{model}}, \code{\link{prior}}, \code{\link{calibrate}}, \code{\link{forecast}} and
+#'  \code{\link{sequentialDesign}}.
 #'
 #' @useDynLib CaliCo
 #' @importFrom R6 R6Class
 #' @importFrom stats rnorm
-#' @import ggplot2 DiceKriging DiceDesign FactoMineR coda parallel testthat MASS
+#' @import ggplot2 DiceKriging DiceDesign coda parallel MASS gridExtra gtools
 #'
 #' @details
 #' Package: CaliCo
 #'
 #' Type:    Package
 #'
-#' Version: 0.1.0
+#' Version: 0.1.1
 #'
-#' Date:    2017-11-07
+#' Date:    2018-04-13
 #'
 #' License: GPL-2 | GPL-3
 #'
 #' @docType package
 #' @author Mathieu Carmassi
 #' @author Maintainer: \email{mathieu.carmassi@gmail.com}
-#' @references Bachoc, F., Blois, G., Garnie, J., and Martinez, J.-M. (2014). Calibration and improved prediction of computer models
+#' @references Bachoc, F., Blois, G., Garnier, J., and Martinez, J.-M. (2014). Calibration and improved prediction of computer models
 #' by universal kriging. Computational Statistics and Data Analysis, pages 81–97
 #' @references Bayarri, M., Berger, J., Sacks, P. R., Cafeo, J. A., Cavendish, J., Lin, C. H., and Tu, J. (2007 b). A framework for
 #' validation of computer models. Technometrics.
@@ -32,7 +33,7 @@
 #' Statistics and Data Analysis.
 #' @references Damblin, G. (2015). Contributions statistiques au calage et à la validation des codes de calculs. PhD thesis, University
 #' Paris-Saclay
-#' @references Hastings, W. K. (1970). Mont carlo sampling methods using marlov chains and their applications. Biometrika.
+#' @references Hastings, W. K. (1970). Mont carlo sampling methods using markov chains and their applications. Biometrika.
 #' @references Higdon, D., Kennedy, M. C., Cavendish, J., Cafeo, J., and Ryne, R. (2004). Combining field data and computer
 #' simulations for calibration and prediction. SIAM Journal on Scientific Computing.
 #' @references Kennedy, M. C. and O’Hagan, A. (2001). Bayesian calibration of computer models. Journal of the Royal Statistical

@@ -3,7 +3,7 @@
 \docType{data}
 \name{prior.class}
 \alias{prior.class}
-\title{A Reference Class to generates differents \code{\link{prior.class}} objects}
+\title{A Reference Class to generate differents \code{\link{prior.class}} objects}
 \format{An object of class \code{R6ClassGenerator} of length 24.}
 \usage{
 prior.class
@@ -22,9 +22,7 @@ during the estimation process.
 \describe{
 \item{\code{type.prior}}{of the selected prior}
 
-\item{\code{opt.prior}}{the charasteristics of the selected prior}
-
-\item{\code{log}}{if we want the log result or not}
+\item{\code{opt.prior}}{the characteristics of the selected prior}
 }}
 
 \keyword{datasets}

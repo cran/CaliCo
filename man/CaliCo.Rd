@@ -6,17 +6,18 @@
 \alias{CaliCo-package}
 \title{Bayesian calibration for computational codes}
 \description{
-The CaliCo package provides three categories of important functions:
-\code{\link{model}}, \code{\link{prior}}, \code{\link{calibrate}} and \code{\link{prediction}}.
+The CaliCo package provides five main functions:
+\code{\link{model}}, \code{\link{prior}}, \code{\link{calibrate}}, \code{\link{forecast}} and
+ \code{\link{sequentialDesign}}.
 }
 \details{
 Package: CaliCo
 
 Type:    Package
 
-Version: 0.1.0
+Version: 0.1.1
 
-Date:    2017-11-07
+Date:    2018-04-13
 
 License: GPL-2 | GPL-3
 }
@@ -25,7 +26,7 @@ License: GPL-2 | GPL-3
 \dontrun{vignette("CaliCo-introduction")}
 }
 \references{
-Bachoc, F., Blois, G., Garnie, J., and Martinez, J.-M. (2014). Calibration and improved prediction of computer models
+Bachoc, F., Blois, G., Garnier, J., and Martinez, J.-M. (2014). Calibration and improved prediction of computer models
 by universal kriging. Computational Statistics and Data Analysis, pages 81–97
 
 Bayarri, M., Berger, J., Sacks, P. R., Cafeo, J. A., Cavendish, J., Lin, C. H., and Tu, J. (2007 b). A framework for
@@ -40,7 +41,7 @@ Statistics and Data Analysis.
 Damblin, G. (2015). Contributions statistiques au calage et à la validation des codes de calculs. PhD thesis, University
 Paris-Saclay
 
-Hastings, W. K. (1970). Mont carlo sampling methods using marlov chains and their applications. Biometrika.
+Hastings, W. K. (1970). Mont carlo sampling methods using markov chains and their applications. Biometrika.
 
 Higdon, D., Kennedy, M. C., Cavendish, J., Cafeo, J., and Ryne, R. (2004). Combining field data and computer
 simulations for calibration and prediction. SIAM Journal on Scientific Computing.

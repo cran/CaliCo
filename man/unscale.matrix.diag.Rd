@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{unscale.matrix.diag}
 \alias{unscale.matrix.diag}
-\title{Funcion which unscale only the diagonal component of a matrix}
+\title{Function which unscale only the diagonal component of a matrix}
 \usage{
 unscale.matrix.diag(M, binf, bsup)
 }
@@ -17,7 +17,7 @@ unscale.matrix.diag(M, binf, bsup)
 the normalized diagonal
 }
 \description{
-Funcion which unscale only the diagonal component of a matrix
+Function which unscale only the diagonal component of a matrix
 }
 \examples{
 \dontrun{

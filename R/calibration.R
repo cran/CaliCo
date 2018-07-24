@@ -1,4 +1,4 @@
-#' A Reference Class to generates differents \code{calibrate.class} objects
+#' A Reference Class to generates different \code{calibrate.class} objects
 #'
 #' @description See the function \code{\link{calibrate}} which produces an instance of this class
 #' This class comes with a set of methods, some of them being useful for the user:
@@ -29,21 +29,24 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                              logPost    = NULL,
                              mcmc       = NULL,
                              output     = NULL,
-                             onlyCV = NULL,
+                             onlyCV     = NULL,
                              errorCV    = NULL,
                              ResultsCV  = NULL,
+                             q05        = NULL,
+                             q95        = NULL,
+                             coverRate  = NULL,
                              n.cores    = NULL,
                              binf       = NULL,
                              bsup       = NULL,
                              initialize = function(md=NA,pr=NA,opt.estim=NA,opt.valid=NULL,onlyCV)
                              {
-                               #library(parallel)
                                self$onlyCV <- onlyCV
                                self$md         <- md
                                self$pr         <- pr
                                self$opt.estim  <- opt.estim
                                self$opt.valid  <- opt.valid
                                self$logPost    <- private$logLikelihood(self$md$model)
+                               Dim             <- length(self$pr)
                                if (Sys.info()[['sysname']]=="Windows")
                                {
                                  self$n.cores    <- 1
@@ -61,36 +64,75 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                  {
                                    self$output  <- self$calibration()
                                    self$mcmc    <- as.mcmc(self$output$out$THETA)
+                                   chain        <- self$output$out$THETA[-c(1:self$opt.estim$burnIn),]
+                                   qq           <- private$quantiles(chain)
+                                   self$q05     <- qq$q05
+                                   self$q95     <- qq$q95
                                  } else
                                  {
+                                   cat("\nMultichain calibration is parallelized...\n\n")
                                    n            <- c(1:opt.estim$Nchains)
-                                   self$output  <- mclapply(n,self$calibration,mc.cores = self$n.cores)
+                                   if (Sys.info()[['sysname']]=="Windows")
+                                   {
+                                     self$output  <- lapply(n,self$calibration)
+                                   } else
+                                   {
+                                     self$output  <- mclapply(n,self$calibration,mc.cores = self$n.cores)
+                                   }
                                    self$mcmc    <- list()
                                    for (i in 1:opt.estim$Nchains)
                                    {
                                      self$mcmc[[i]] <- as.mcmc(self$output[[i]]$out$THETA)
                                    }
+                                   self$output    <- self$output[[1]]
+                                   chain          <- self$output$out$THETA[-c(1:self$opt.estim$burnIn),]
+                                   qq             <- private$quantiles(chain)
+                                   self$q05       <- qq$q05
+                                   self$q95       <- qq$q95
+                                   self$mcmc      <- as.mcmc.list(self$mcmc)
                                  }
                                  cat("\nEnd of the regular calibration\n\n")
                                }
                                if (is.null(self$opt.valid)==FALSE)
                                {
-                                 self$CV(1)
                                  cat(paste("\nThe cross validation is currently running on your ",
                                              self$n.cores," cores available....\n",sep=""))
-                                 Results <- as.numeric(unlist(mclapply(c(1:opt.valid$nCV),
-                                                                      self$CV,mc.cores = self$n.cores)))
+                                 if (Sys.info()[[1]]=="Windows")
+                                 {
+                                   Results <- lapply(c(1:opt.valid$nCV),
+                                                       self$CV)
+                                 } else
+                                 {
+                                   Results <- mclapply(c(1:opt.valid$nCV),
+                                                       self$CV,mc.cores = self$n.cores)
+                                 }
+                                 self$coverRate <- 0
                                  for (i in 1:self$opt.valid$nCV)
                                  {
-                                   inc <- (i-1)*3+1
+                                   TempRes <- Results[[i]]
+                                   inc <- TempRes$inc
                                    if (i==1){
-                                     self$ResultsCV <- data.frame(Predicted=Results[1],Real=Results[2],Error=Results[3])
+                                     self$ResultsCV <- data.frame(Predicted=TempRes$Predict,Real=TempRes$Yval,Error=TempRes$err)
+                                     if (self$onlyCV==FALSE)
+                                     {
+                                       if (TempRes$Predict < self$q95[inc] & TempRes$Predict > self$q05[inc])
+                                       {
+                                         self$coverRate <- self$coverRate + 1
+                                       }
+                                     }
                                      } else{
-                                       self$ResultsCV <- rbind(self$ResultsCV,data.frame(Predicted=Results[inc],
-                                                                                         Real=Results[inc+1],
-                                                                                         Error=Results[inc+2]))
-                                   }
+                                       self$ResultsCV <- rbind(self$ResultsCV,data.frame(Predicted=TempRes$Predict,
+                                                                                         Real=TempRes$Yval,Error=TempRes$err))
+                                       if (self$onlyCV==FALSE)
+                                       {
+                                         if (TempRes$Predict < self$q95[inc] & TempRes$Predict > self$q05[inc])
+                                         {
+                                           self$coverRate <- self$coverRate + 1
+                                         }
+                                       }
+                                     }
                                  }
+                                 self$coverRate <- self$coverRate/self$opt.valid$nCV
                                  self$errorCV <- sqrt(mean(self$ResultsCV$Error))
                                }
                              },
@@ -100,13 +142,14 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                self$bsup     <- private$boundaries()$bsup
                                MetropolisCpp <- private$MCMC(self$md$model)
                                out           <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
-                                                              self$opt.estim$thetaInit,self$opt.estim$k,
+                                                              self$opt.estim$thetaInit,self$opt.estim$r,
                                                               self$opt.estim$sig,self$md$Yexp,self$binf,self$bsup,self$logPost,1)
                                MAP           <- private$MAPestimator(out)
                                return(list(out=out,MAP=MAP))
                              },
                              CV = function(i=NA)
                              {
+                               Dim <- length(self$pr)
                                if (self$opt.valid$type.valid=="loo")
                                {
                                  inc <- sample(c(1:self$md$n),1)
@@ -121,20 +164,25 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                  }
                                  Ycal        <- self$md$Yexp[-inc]
                                  Yval        <- self$md$Yexp[inc]
-                                 mdTempCal   <- model(code=self$md$code,dataCal,Ycal,self$md$model,self$md$opt.emul)
+                                 mdTempCal   <- model(code = self$md$code, X = dataCal, Yexp = Ycal,
+                                                      model = self$md$model,
+                                                      opt.gp = self$md$opt.gp,
+                                                      opt.emul = self$md$opt.emul,
+                                                      opt.sim = self$md$opt.sim)
                                  mdTempfit   <- self$calibrationCV(mdTempCal,Ycal)
-                                 Dim         <- length(self$pr)
                                  thetaMAP    <- mdTempfit$MAP
                                  if (mdTempCal$model=="model1" | mdTempCal$model=="model2")
                                  {
-                                    Predict  <- mdTempCal$pred(thetaMAP[1:(Dim-1)],thetaMAP[Dim],dataVal)$y
+                                    Predict  <- mdTempCal$model.fun(thetaMAP[1:(Dim-1)],thetaMAP[Dim],dataVal)$y
+                                    if (is.na(Predict)){Predict <- Yval}
                                  } else
                                  {
-                                    Predict  <- mdTempCal$pred(thetaMAP[1:(Dim-3)],thetaMAP[(Dim-2):(Dim-1)],
+                                    Predict  <- mdTempCal$model.fun(thetaMAP[1:(Dim-3)],thetaMAP[(Dim-2):(Dim-1)],
                                                                thetaMAP[Dim],dataVal)$y
+                                    if (is.na(Predict)){Predict <- Yval}
                                  }
                                  err <- sqrt((Predict-Yval)^2)
-                                 res <- list(Predict=Predict,Yval=Yval,err=err)
+                                 res <- list(Predict=Predict,Yval=Yval,err=err,inc=inc)
                                  return(res)
                                }
                              },
@@ -143,10 +191,9 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                binf          <- private$boundaries()$binf
                                bsup          <- private$boundaries()$bsup
                                MetropolisCpp <- private$MCMC(mdTemp$model)
-                               out           <- MetropolisCpp(self$opt.estim$Ngibbs,
-                                                              self$opt.estim$Nmh,
-                                                              self$opt.estim$thetaInit,self$opt.estim$k,
-                                                              self$opt.estim$sig,y,binf,bsup,self$logPost,0)
+                               out           <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
+                                                              self$opt.estim$thetaInit,self$opt.estim$r,
+                                                              self$opt.estim$sig,self$md$Yexp,binf,bsup,self$logPost,0)
                                MAP           <- private$MAPestimator(out)
                                return(list(out=out,MAP=MAP))
                              }
@@ -177,6 +224,56 @@ calibrate.class$set("private","boundaries",
                   }
                   return(list(binf=binf,bsup=bsup))
                 })
+
+
+calibrate.class$set("private","quantiles",
+                    function(chain)
+                    {
+                      Dist <- matrix(nr=nrow(chain),nc=length(self$md$Yexp))
+                      dim   <- length(self$pr)
+                      if (self$md$model == "model1" || self$md$model == "model2")
+                      {
+                        parFun <- function(i)
+                        {
+                          D  <- self$md$model.fun(chain[i,1:(dim-1)],chain[i,dim],self$md$X)$y
+                          return(D)
+                        }
+                        if (Sys.info()[['sysname']]=="Windows")
+                        {
+                          res <- lapply(1:nrow(chain),parFun)
+                        } else
+                        {
+                          res <- mclapply(1:nrow(chain),parFun,mc.cores = self$n.cores)
+                        }
+                        for (i in 1:nrow(chain))
+                        {
+                          Dist[i,] <- res[[i]]
+                        }
+                        qq <- apply(Dist,2,quantile,probs=c(0.05,0.95))
+                        return(list(q05=qq[1,],q95=qq[2,]))
+                      } else
+                      {
+                        parFun <- function(i)
+                        {
+                          D  <- self$md$model.fun(chain[i,1:(dim-3)],chain[i,(dim-2):(dim-1)],chain[i,dim],
+                                                  self$md$X,CI=NULL)$y
+                          return(D)
+                        }
+                        if (Sys.info()[['sysname']]=="Windows")
+                        {
+                          res <- lapply(1:nrow(chain),parFun)
+                        } else
+                        {
+                          res <- mclapply(1:nrow(chain),parFun,mc.cores = self$n.cores)
+                        }
+                        for (i in 1:nrow(chain))
+                        {
+                          Dist[i,]  <- res[[i]]
+                        }
+                        qq <- apply(Dist,2,quantile,probs=c(0.05,0.95))
+                        return(list(q05=qq[1,],q95=qq[2,]))
+                      }
+                    })
 
 
 calibrate.class$set("private","logLikelihood",
@@ -230,24 +327,6 @@ calibrate.class$set("private","MAPestimator",
                       {
                         chain <- out$THETA[-c(1:self$opt.estim$burnIn),]
                         dens <- apply(chain,2,density)
-                        # if (chain[nrow(chain),1]==chain[1,1] & chain[nrow(chain),2]==chain[1,2])
-                        # {
-                        #   cat("\n")
-                        #   cat("Call:\n")
-                        #   print(self$md$model)
-                        #   cat("\n")
-                        #   cat("With the function:\n")
-                        #   print(self$md$code)
-                        #   cat("\n")
-                        #   cat("Acceptation rate of the Metropolis within Gibbs algorithm:\n")
-                        #   print(paste(round(out$AcceptationRatioWg/self$opt.estim$Ngibbs*100,2),
-                        #               "%",sep = ""))
-                        #   cat("\n")
-                        #   cat("Acceptation rate of the Metropolis Hastings algorithm:\n")
-                        #   print(paste(out$AcceptationRatio/self$opt.estim$Nmh*100,"%",sep = ""))
-                        #   cat("\n")
-                        #   stop('the MCMC chain did not move, please try to launch again with different values of k')
-                        # }
                         map <- function(dens)
                         {
                           dens$x[which(dens$y==max(dens$y))]
@@ -256,61 +335,105 @@ calibrate.class$set("private","MAPestimator",
                     })
 
 
+
 calibrate.class$set("public","plot",
-                    function(graph=c("acf","chains","densities","output"),select.X=NULL)
+                    function(x,graph="all",label=NULL,...)
                     {
-                      if (self$onlyCV==TRUE)
+                      if (missing(x)) stop("No x-axis selected, no graph is displayed",call. = FALSE)
+                      p <- ncol(self$output$out$THETA)-1
+                      p1 <- p2 <- p3 <- P <- L <- corrplot <- list()
+                      inc = 1
+                      for (i in 1:(p+1))
                       {
-                        stop("You only had requested the cross validation, the plot method is desabled")
-                      }
-                      if (self$opt.estim$Nchains>1)
-                      {
-                        warning("You have selected several chains. The plot is from coda package and the coda object
-                                mcmc")
-                        plot(self$mcmc)
-                        stop("")
-                      }
-                      n   <- length(self$pr)
-                      gg  <- list()
-                      a   <- list()
-                      m   <- list()
-                      p   <- list()
-                      if ("acf" %in% graph)
-                      {
-                        for (i in 1:n)
+                        if (i == (p+1)) NameParam <- expression(sigma[err]^2)
+                        else if (self$md$model %in% c("model3","model4") & i == p) NameParam <- expression(Psi[d])
+                        else if (self$md$model %in% c("model3","model4") & i == (p-1)) NameParam <- expression(sigma[d]^2)
+                        else if (!is.null(label)) NameParam <- label[i]
+                        else NameParam <- substitute(theta[i])
+                        p1[[i]] <- self$acf(i)+xlab("Lag")+ylab("ACF")
+                        p2[[i]] <- self$mcmcChains(i) + xlab("iterations") + ylab(NameParam)
+                        dplot2  <- data.frame(data=self$output$out$THETA[-c(1:self$opt.estim$burnIn),i],
+                                              type="posterior")
+                        p3[[i]] <- self$pr[[i]]$plot()+geom_density(data=dplot2,kernel="gaussian",adjust=3,alpha=0.1)+
+                          xlab(NameParam)+theme(legend.text=element_text(size = 10),
+                                                axis.text=element_text(size=20), axis.title = element_text(size=20))+
+                          ylab("density")
+                        if (i < (p+1))
                         {
-                          a[[i]] <- self$acf(i)
+                          for (j in 1:p)
+                          {
+                            if (j != i)
+                            {
+                              corrplot[[inc]] <- self$corrPlot(i,j)+ xlab(substitute(theta[i])) + ylab(substitute(theta[j]))
+                              L[[j]] <- corrplot[[inc]]
+                              inc <- inc+1
+                            } else
+                            {
+                              L[[j]] <- p3[[i]]
+                            }
+                          }
+                          arrangeGrob2 <- function(...) return(arrangeGrob(...,ncol = 1))
+                          if (p != 1) P[[i]] <- do.call(arrangeGrob2,L)
                         }
-                        # do.call(grid.arrange,a)
-                        gg$acf <- a
                       }
-                      if ("chains" %in% graph)
+                      output <- self$outputPlot(select.X=x)+ xlab("x") +ylab("y")
+                      grid.arrange2 <- function(...) return(arrangeGrob(...,nrow=1))
+                      chainPlotLayout <- function()
                       {
-                        for (i in 1:n)
+                        if (self$md$model %in% c("model1","model2")) N <- p+1 else N <- p+3
+                        t  <- N%/%3
+                        tr <- N%%3
+                        inc <- 0
+                        if (t == 0)
                         {
-                          m[[i]] <- self$mcmcChains(i)
-                        }
-                        # do.call(grid.arrange,m)
-                        gg$mcmc <- m
-                      }
-                      if ("densities" %in% graph)
-                      {
-                        for (i in 1:n)
+                          grid.arrange(do.call(grid.arrange2,p1),do.call(grid.arrange2,p2),do.call(grid.arrange2,p3))
+                        } else
                         {
-                          dplot2  <- data.frame(data=self$output$out$THETA[-c(1:self$opt.estim$burnIn),i],
-                                                type="posterior")
-                          p[[i]] <- self$pr[[i]]$plot()+geom_density(data=dplot2,kernel="gaussian",adjust=3,alpha=0.1)
+                          for (j in 1:t)
+                          {
+                            inc <- inc + 1
+                            if (inc > N) break
+                            grid.arrange(do.call(grid.arrange2,p1[(3*(j-1)+1):(3*j)]),
+                                         do.call(grid.arrange2,p2[(3*(j-1)+1):(3*j)]),
+                                         do.call(grid.arrange2,p3[(3*(j-1)+1):(3*j)]))
+                          }
                         }
-                        # do.call(grid.arrange,p)
-                        gg$dens <- p
                       }
-                      if ("output" %in% graph)
+                      corrPlotLayout <- function()
                       {
-                        o <- self$outputPlot(select.X)
-                        # print(o)
-                        gg$output <- o
+                        if (p == 1) {warning("No correlation plot available",call. = FALSE)}
+                        else
+                        {
+                           plot(do.call(grid.arrange2,P))
+                        }
                       }
-                      return(gg)
+                      if (!is.null(graph))
+                      {
+                        if ("chains" %in% graph)
+                        {
+                          chainPlotLayout()
+                        } else if ("corr" %in% graph)
+                        {
+                          corrPlotLayout()
+                        } else if ("result" %in% graph)
+                        {
+                          print(output)
+                        } else if (graph == "all")
+                        {
+                          chainPlotLayout()
+                          corrPlotLayout()
+                          print(output)
+                        } else
+                        {
+                          warning("The graph value is not correct all graphs are displayed",call. = FALSE)
+                          chainPlotLayout()
+                          corrPlotLayout()
+                          print(output)
+                        }
+                      } else {
+                        #warning('Nothing is plot since the graph option is NULL',call. = FALSE)
+                      }
+                      invisible(list(ACF=p1,MCMC=p2,dens=p3,corrplot=corrplot,out=output))
                     })
 
 
@@ -325,6 +448,19 @@ calibrate.class$set("public","acf",
                         xlab("")+ylab("")+theme_light()
                       return(p)
                       })
+
+
+calibrate.class$set("public","corrPlot",
+                    function(i,j)
+                    {
+                      chain1 <- self$output$out$THETA[-c(1:self$opt.estim$burnIn),i]
+                      chain2 <- self$output$out$THETA[-c(1:self$opt.estim$burnIn),j]
+                      df     <- data.frame(x=chain1,y=chain2)
+                      p      <- ggplot(data = df, mapping = aes(x=x, y=y))+
+                        geom_jitter() + xlab(expression(theta_1))+
+                        ylab(expression(theta_1))+theme_light()
+                      return(p)
+                    })
 
 calibrate.class$set("public","mcmcChains",
                     function(i)
@@ -358,10 +494,16 @@ calibrate.class$set("public","outputPlot",
                       {
                         parFun <- function(i)
                         {
-                          D  <- self$md$fun(m[i,1:(dim-1)],m[i,dim])$y
+                          D  <- self$md$model.fun(m[i,1:(dim-1)],m[i,dim])$y
                           return(D)
                         }
-                        res <- mclapply(1:nrow(m),parFun,mc.cores = self$n.cores)
+                        if (Sys.info()[['sysname']]=="Windows")
+                        {
+                          res <- lapply(1:nrow(m),parFun)
+                        } else
+                        {
+                          res <- mclapply(1:nrow(m),parFun,mc.cores = self$n.cores)
+                        }
                         for (i in 1:nrow(m))
                         {
                           Dist[i,] <- res[[i]]
@@ -371,12 +513,18 @@ calibrate.class$set("public","outputPlot",
                         print('The computational time might be long to get the output plot')
                         parFun <- function(i)
                         {
-                          D  <- self$md$fun(m[i,1:(dim-3)],m[i,(dim-2):(dim-1)],m[i,dim])$y
-                          D2 <- self$md$fun(self$output$MAP[1:(dim-3)],m[i,(dim-2):(dim-1)],
+                          D  <- self$md$model.fun(m[i,1:(dim-3)],m[i,(dim-2):(dim-1)],m[i,dim])$y
+                          D2 <- self$md$model.fun(self$output$MAP[1:(dim-3)],m[i,(dim-2):(dim-1)],
                                                    self$output$MAP[dim])$y
                           return(list(D=D,D2=D2))
                         }
-                        res <- mclapply(1:nrow(m),parFun,mc.cores = self$n.cores)
+                        if (Sys.info()[['sysname']]=="Windows")
+                        {
+                          res <- lapply(1:nrow(m),parFun)
+                        } else
+                        {
+                          res <- mclapply(1:nrow(m),parFun,mc.cores = self$n.cores)
+                        }
                         for (i in 1:nrow(m))
                         {
                           Dist[i,]  <- res[[i]]$D
@@ -384,37 +532,36 @@ calibrate.class$set("public","outputPlot",
                         }
                         qqd <- apply(Dist2,2,quantile,probs=c(0.05,0.95))
                         ggdata2 <- data.frame(y=self$md$Yexp,x=X,upper=qqd[2,],lower=qqd[1,],type="experiments",
-                                            fill="90% credibility interval for the discrepancy")
+                                            fill="95% credibility interval for the discrepancy")
                       }
                       qq <- apply(Dist,2,quantile,probs=c(0.05,0.95))
                       if (self$md$model=="model1"||self$md$model=="model2")
                       {
                         MAP <- self$output$MAP
                         p <- length(MAP)-1
-                        Ys <- self$md$fun(MAP[1:p],MAP[p+1])$y
+                        Ys <- self$md$model.fun(MAP[1:p],MAP[p+1])$y
                       }else
                       {
                         MAP <- self$output$MAP
                         p <- length(MAP)-3
-                        Ys <- self$md$fun(MAP[1:p],MAP[(p+1):(p+2)],MAP[p+3])$y
+                        Ys <- self$md$model.fun(MAP[1:p],MAP[(p+1):(p+2)],MAP[p+3])$y
                       }
                       ggdata <- data.frame(y=Ys,x=X,upper=qq[2,],lower=qq[1,],type="calibrated",
-                                           fill="90% credibility interval a posteriori")
+                                           fill="95% credibility interval a posteriori")
                       if (self$md$model == "model1" || self$md$model == "model2")
                       {
                         ggdata2 <- data.frame(y=self$md$Yexp,x=X,upper=qq[2,],lower=qq[1,],type="experiments",
-                                              fill="90% credibility interval a posteriori")
+                                              fill="95% credibility interval a posteriori")
                       }
                       ggdata <- rbind(ggdata,ggdata2)
                       p <- ggplot(ggdata) + geom_line(aes(x=x,y=y,color=type))+
                         geom_ribbon(aes(ymin=lower, ymax=upper, x=x,fill=fill), alpha = 0.3) +
                         scale_fill_manual("",values=c("blue4","black")) +
                         theme_light() + xlab("") + ylab("") +
-                        theme(legend.position=c(0.65,0.86),
-                              legend.text=element_text(size = '15'),
-                              legend.title=element_blank(),
-                              legend.key=element_rect(colour=NA),
-                              axis.text=element_text(size=20))
+                        theme(legend.title = element_blank(),
+                              legend.position = c(0.2,0.8),
+                              legend.background = element_rect(
+                                linetype="solid", colour ="grey"))
                      return(p)
                     })
 
@@ -449,6 +596,15 @@ calibrate.class$set("public","print",
                           print(head(self$ResultsCV))
                           cat("\nRMSE: ")
                           print(self$errorCV)
+                          if (self$onlyCV==FALSE)
+                          {
+                            cat("\nCover rate: \n")
+                            print(paste(round(self$coverRate*100,2),"%",sep = ""))
+                          } else
+                          {
+                            cat("\nTo activate the coverage rate, please desable the otion onlyCV")
+                          }
+
                         }
                       }
                     }

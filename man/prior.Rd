@@ -4,24 +4,23 @@
 \alias{prior}
 \title{Generates \code{\link{prior.class}} objects.}
 \usage{
-prior(type.prior, opt.prior, log = TRUE)
+prior(type.prior, opt.prior)
 }
 \arguments{
 \item{type.prior}{the vector of the prior types selected. For example type.prior=c("gaussian","gamma")}
 
 \item{opt.prior}{list of the hyperparameters relatives to the prior selected. If the first prior selected is
-Gaussian, the hyperparameters would be the mean and the standard deviation. See Details for precisions.}
-
-\item{log}{(default=TRUE) if the log value is wanted or not.}
+Gaussian, the hyperparameters would be the mean and the standard deviation. See Details for further clarifications.}
 }
 \value{
 \code{prior} returns a \code{\link{prior.class}} object. Two main methods are available:
 \itemize{\item{plot()}{ display the probability density of the prior}
-\item{print()}{ return the main information concerning the prior distribution}}
+\item{print()}{ returns the main information concerning the prior distribution}}
 }
 \description{
 \code{prior} is a function that generates a \code{\link{prior.class}} containing information about one or
-several priors. When several priors are selected, the function \code{prior} return a list of \code{\link{prior.class}}.
+several priors. When several priors are selected, the function \code{prior}
+ returns a list of \code{\link{prior.class}}.
 }
 \details{
 The densities implemented are defined as follow
@@ -54,7 +53,7 @@ plot(priors$Prior2)
 }
 }
 \seealso{
-\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
+\code{\link{model}}, \code{\link{calibrate}}, \code{\link{forecast}}, \code{\link{sequentialDesign}}
 }
 \author{
 M. Carmassi

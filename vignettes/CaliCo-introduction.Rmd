@@ -10,6 +10,14 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  echo=TRUE, cache=FALSE)
+if (Sys.info()[['sysname']]=="Windows")
+{
+    windowsFonts(Times=windowsFont("TT Times New Roman"))
+}
+```
 
 The package `CaliCo` allows to rule a Bayesian calibration on every kind of code ("black box" or analytic codes). The aim of the Bayesian calibration is to better asses the uncertainty on the parameters of the code. In `CaliCo`, the code to calibrate has to be defined with two kinds of inputs. The first concerns the forced variables and the second the parameters. 
 $$
@@ -45,9 +53,8 @@ $$
 
 The function $f_t$ is chosen with only one forced variable and one parameter $\theta$. Let us say that experiments are available and can be expressed by $Y_exp$. The belief on the value of $\theta$ shows that a non-negligible gap is present.
 
-```{r, fig.width=4,echo=FALSE,fig.align='center'}
+```{r, fig.width=5,fig.height=4,echo=FALSE,fig.align='center'}
 library(ggplot2)
-
 n=10
 X <- seq(0,1,length.out=n)
 code <- function(X,theta)
@@ -60,8 +67,12 @@ gdata <- data.frame(y=Yexp,x=X,type="Experiments")
 gdata2 <- data.frame(y=Yt,x=X,type="Theoretical results")
 gdata <- rbind(gdata,gdata2)
 
-p1 <- ggplot(gdata,aes(x = x,y=y, col=type))+geom_line() + theme_light() + theme(legend.position=c(0.50,0.80),
-                                                                                 legend.title=element_blank())
+p1 <- ggplot(gdata,aes(x = x,y=y, col=type))+geom_line() + theme_light() + theme(legend.title = element_blank(),
+                                  legend.position = c(0.5,0.8),
+                                  legend.background = element_rect(linetype="solid", colour ="grey"),
+                                  axis.title=element_text(size=20,family = "Helvetica",face = "italic"),
+                                  axis.text = element_text(size=20),
+                                  legend.text = element_text(size=10))
 p1
 ```    
 
@@ -94,7 +105,7 @@ As detailed before, there is four models. Two of them use a Gaussian process to 
 Let us consider, the set of experiments generated for $\theta=10.9$ and a measurement error of $\sigma_{err}^2=0.01$. Let us also consider that the prior belief on $\theta$ is that $\theta \sim \mathcal{N}(11,0.01)$ and $\sigma_{err}^2\sim\Gamma(1,0.01)$. 
 
 
-```{r, fig.width=6,echo=FALSE,fig.align='center'}
+```{r, fig.width=5,fig.height=4,echo=FALSE,fig.align='center'}
 theta.prior <- rnorm(100,11,sqrt(.5))
 sigma.prior <- 0.01
 
@@ -108,7 +119,12 @@ gdata <- data.frame(y=Yexp,x=X,upper=qq[2,],lower=qq[1,],type="Experiments",fill
 gdata2 <- data.frame(y=Yt,x=X,upper=qq[2,],lower=qq[1,],type="Prior belief",fill="credibility interval a priori at 90%")
 gdata <- rbind(gdata,gdata2)
 
-p2 <- ggplot(gdata)+geom_line(aes(x=x,y=y,col=type))+geom_ribbon(aes(x=x,ymax=upper,ymin=lower,fill=fill),alpha=0.3)+theme_light()+theme(legend.title=element_blank(),legend.key=element_rect(colour=NA),legend.text=element_text(size = '8'))
+p2 <- ggplot(gdata)+geom_line(aes(x=x,y=y,col=type))+geom_ribbon(aes(x=x,ymax=upper,ymin=lower,fill=fill),alpha=0.3)+theme_light()+theme(legend.title = element_blank(),
+                                  legend.position = c(0.3,0.8),
+                                  legend.background = element_rect(linetype="solid", colour ="grey"),
+                                  axis.title=element_text(size=20,family = "Helvetica",face = "italic"),
+                                  axis.text = element_text(size=20),
+                                  legend.text = element_text(size=10))
 p2
 ```    
 
@@ -141,52 +157,115 @@ The function `model` creates a `model.class` object which is a `R6` object. All 
 print(model1)
 ```
 
-The `plot` requires some inputs (\emph{i.e.} `plot(model,theta,var)`) where `theta` is the parameter value or vector and `var` the variance of the white Gaussian noise which represents the measurmement error.
-```{r, echo=TRUE,fig.width=4,fig.align="center"}
-plot(model1,11,0.01)
+
+To access graphical visualization of the model, parameter values need to be added. The pipe `\%<\%` defined is `CaliCo` allows to load parameter values into a statistical model. The argument of the pipe is a `list` which has for name `theta`, `thetaD` and `var`. These values stand for, respectively, the input parameter vector, the vector composed of the parameter of the discrepancy (only for $\mathcal{M}_3$ and $\mathcal{M}_4$, not necessary for $\mathcal{M}_1$ or $\mathcal{M}_2$) wich are the variance of the covariance function and the correlation lenght, and the variance of the measumrement error. The procedure for $\mathcal{M}_1$ is done as the following code line.
+
+```{r, echo=TRUE}
+model1 %<% list(theta=11,var=0.01)
 ```
+
+A `Warning` message appears everytime to sensitize the user to be careful with the size of the paramerter vector. Then to display the results of the model, the function `plot` can be used straightforwardly. The first argument of the function is the model, one wants to plot and the second argument is the x-axis. These two arguments are required to get the graph output. An additional argument, `CI`, allows to control the credibility interval one wants to see. By default `CI="all"`, but if `CI="err"` only the $95\%$ CI of the measurment error with or not the discrepancy is given. Similarly, for $\mathcal{M}_2$ and $\mathcal{M}_4$ if `CI="GP"` only the $95\%$ CI of the Gaussian process is shown.
+
+The `plot` requires some inputs (\emph{i.e.} `plot(model,theta,var)`) where `theta` is the parameter value or vector and `var` the variance of the white Gaussian noise which represents the measurmement error.
+```{r, echo=TRUE,eval=TRUE,fig.width=5,fig.height=4,fig.align="center"}
+plot(model1,t)
+```
+
 
 Note that the method `plot` generates a `ggplot`. It is possible to store the plot into a variable and make some changes. For example, if one is interested in adding a title, the labels, decrease the size of the legend and move it a little:
 
-```{r, echo=TRUE,fig.width=4,fig.align="center"}
+```{r, echo=TRUE,fig.width=5,fig.height=4,fig.align="center"}
 library(ggplot2)
-p <- plot(model1,11,0.01)
+p <- plot(model1,t)
 p+ggtitle("Model1 and experiments")+ylab("y")+xlab("t")+
-  theme(legend.position=c(0.6,0.75),legend.text=element_text(size = '7'))
+  theme(legend.position=c(0.3,0.75),legend.text=element_text(size = '7'))
 ```
 
 ### Model 2
 
-The second model is usefull when the code is time consuming. Let us consider that $f_t$ is time consuming. The function `model` implements the emulation by creating a maximin latin hypercube sample (lhs) design from `DiceDesign` package. Compared to $\mathcal{M}_1$ an option is added in the function `model` which is `opt.emul` the emulation options:
+The second model is usefull when the code is time consuming. The package `CaliCo` offers a flexibility from this point with three possibilities. The first, one possesses the code explicitely in `R` with the same features than before (note that if the code has no input variables, the function needs to be defined indentically as before but in the function `model` only set `X=0`) but without any design of experiments (DOE). In that cas, the function `model` creates a new maximin Latin Hypercube Space (LHS) and evaluates the code at the locations selected by the DOE. The options to establish such a DOE are controlled by the user with the option `opt.emul`. If one possesses the code and a specific DOE, it is also possible to give both of them at the function `model`. Then, if no code is available but a DOE with the corresponding outputs of the code are in the user's possession, another option `opt.sim` allows to build the model on these specifications. Let us detail these three possibilities.
+
+#### Numerical code without DOE
+
+In this case, one possesses the code $f_t$ and has no DOE. To create a Gaussian process that emulates the code, an option needs to be filled in the function `model` which is `opt.gp`. This option is a `list` of two components:
+
+  * `type` the type of the kernel in agreement with `km` function from `DiceKrigging` package
+  * `DOE` specific DOE given by the user (default value NULL).
+  
+If this case `DOE` is let to the `NULL` value. Then, the option `opt.emul` is useful to control the building of the DOE and is composed of:
 
   * `p` the number of parameter in the code
-  * `n.emul` the number of experiments in the design of experiments (DOE)
-  * `type` the kernel in agreement with `km` function from `DiceKrigging` package
-  * `binf` the lower bound of the parameter value or vector
-  * `bsup` the upper bound of the parameter value or vector
-  * `DOE` (default=NULL) self made DOE
+  * `n.emul` the number of experiments in the DOE (default value 100)
+  * `binf` the lower bound of the parameter value or vector (default value 0)
+  * `bsup` the upper bound of the parameter value or vector (default value 1)
 
-When the code has a special (and known) behavior, one can set up its own DOE and include it in `opt.emul` and `DOE` to run the emulation with it.
+The creation of the model is completed by the following code.
 
-```{r,echo=TRUE}
-# Set the lower and upper bound (taken large intentionally)
-binf <- 8
-bsup <- 13
-
-# Set the emulation option
-opt.emul <- list(p=1,n.emul=40,type="matern3_2",binf=binf,bsup=bsup,DOE=NULL)
-# Generate the second model
-model2 <- model(code,X,Yexp,"model2",opt.emul)
+```{r, echo=TRUE}
+model2code <- model(code,X,Yexp,"model2",
+                    opt.gp=list(type="matern5_2", DOE=NULL),
+                    opt.emul=list(p=1,n.emul=40,binf=8,bsup=13))
 ```
 
+The output is the results of the optimization done by `DiceKriging` for estimating the parameters of the Gaussian process.
 
-The output printed is what is what returns the `km` function. Identically as before, two methods are available `print` and `plot`.
+#### Numerical code with DOE
 
-```{r, echo=TRUE,fig.width=4,fig.align="center"}
-p <- plot(model2,11,0.01)
-p+ylab("y")+xlab("t")+
-  theme(legend.position=c(0.6,0.75),legend.text=element_text(size = '7'))
+In that case, one is free to generate a DOE appart from the function `model`. Let us consider, for the following, that the DOE is generated by the package `DiceDesign`, is a maximin LHS of $30$ points and is called `myDOE`.
+
+
+```{r, echo=FALSE}
+myDOE <- DiceDesign::lhsDesign(30,2)$design
+myDOE[,2] <- unscale(myDOE[,2],8,13)
 ```
+
+Then, to built the model, the option `opt.emul` is not needed anymore.
+
+```{r, echo=TRUE}
+model2doe <- model(code,X,Yexp,"model2",
+                   opt.gp=list(type="matern5_2", DOE=myDOE))
+```
+
+#### DOE with corresponding outputs
+
+In this case, an option is added to `opt.gp` and allows define a DOE and the corresponding outputs of the code. This option `opt.sim` is a `list` of two components:
+
+  * `Ysim` the outputs of the code
+  * `DOEsim` the DOE corresponding
+  
+Let us consider that for `myDOE` all the points are evaluated by $f_t$ and the outputs are collected into a vector called `Ys`. Then, the model definition is completed with the following code:
+
+```{r, echo=FALSE}
+Ys <- matrix(nr=30,nc=1)
+for (i in 1:30)
+{
+  Ys[i] <- code(myDOE[i,1],myDOE[i,2])
+}
+```
+
+```{r, echo=TRUE}
+model2 <- model(code=NULL,X,Yexp,"model2",
+                opt.gp=list(type="matern5_2", DOE=NULL),
+                opt.sim=list(Ysim=Ys,DOEsim=myDOE))
+```
+
+#### Graphical representation
+
+Similarly as for $\mathcal{M}_1$, parameters has to be added with the pipe `\%<\%` to access visual representation.
+
+```{r, echo=TRUE, results='hide'}
+paramList <- list(theta=11,var=0.1)
+model2code %<% paramList
+model2doe %<% paramList
+model2 %<% paramList
+```
+
+```{r, echo=TRUE, eval=TRUE,fig.width=5,fig.height=4,fig.align="center"}
+plot(model2code,t)
+plot(model2doe,t)
+plot(model2,t)
+```
+
 
 ### Model 3 and Model 4
 
@@ -197,34 +276,37 @@ Both $\mathcal{M}_3$ and $\mathcal{M}_4$ add a discrepancy to respectively $\mat
   * "matern3_2" Matèrn 3/2
   * "matern5_2" Matèrn 5/2
 
-The user is free to select the form of the covariance structure in the discrepancy. Howerver, the expectancy is set automatically to zero.
+The user is free to select the form of the covariance structure in the discrepancy. Howerver, the expectancy is set automatically to zero. As an example, for $\mathcal{M}_3$ no surrogate of the code is used then:
 
 ```{r, echo=TRUE}
-opt.disc <- list(kernel.type="matern5_2")
-# Generate the third model
-model3 <- model(code,X,Yexp,"model3",opt.disc=opt.disc)
-
-# Generate the fourth model where the emulation option are needed
-### Here opt.emul is the same as the one for the second model
-model4 <- model(code,X,Yexp,"model4",opt.emul,opt.disc)
+model3 <- model(code,X,Yexp,"model3",
+                opt.disc=list(kernel.type="matern5_2"))
 ```
 
-Identically as before, the object `model3` get two main methods `print` and `plot`. The number of parameters had increased compared to $\mathcal{M}_1$. Two parameters are added and are relative to the discrepancy. Those are $\psi$ the correlation length and $\sigma_{\delta}^2$ the variance of the covariance structure. For using, the `plot` method, a value for those parameters has to be set. That is why, for $\mathcal{M}_3$ and $\mathcal{M}_4$ the method `plot` generated by `model` will take as inputs `$plot(theta,thetaD,var)` where `theta` is the parameter value or vector, `thetaD` is the vector which encompases $\psi$ and $\sigma_{\delta}^2$ and `var` the variance of the white Gaussian noise which represents the measurmement error.
-
-
-```{r, echo=TRUE, fig.width=4, fig.align="center"}
-p <- plot(model3,11,c(2,0.5),0.01)
-p+ylab("y")+xlab("t")+
-  theme(legend.position=c(0.6,0.75),legend.text=element_text(size = '7'))
+For $\mathcal{M}_4$, in the third case (where only the DOE and code output are available) the model is generated by:
+```{r, echo=TRUE}
+model4 <- model(code,X,Yexp,"model4",
+                opt.gp=list(type="matern5_2", DOE=NULL),
+                opt.sim=list(Ysim=Ys,DOEsim=myDOE),
+                opt.disc=list(kernel.type="gauss"))
 ```
 
-```{r, echo=TRUE, fig.width=6, fig.align="center"}
-p <- plot(model4,11,c(1,0.1),0.01)
-p+ylab("y")+xlab("t")+
-  theme(legend.position="right",legend.text=element_text(size = '7'))
+
+Identically as before, parameters are added. However, the parameters relative to the discrepancy needs to be added. As a matter of fact, these parameters are estimated in Bayesian calibration at the same time than `theta` and `var`. That is why a parameter vector `thetaD` is added and contains $\sigma_{\delta}^2$ and $\psi$ the variance and the correlation length of the Gaussian process of the discrepancy.
+
+
+```{r, echo=TRUE}
+model3 %<% list(theta=11,thetaD=c(0.1,0.5),var=0.1)
+model4 %<% list(theta=11,thetaD=c(0.1,0.5),var=0.1)
 ```
 
-Running a Bayesian calibration means to have a prior belief on the parameters. Set prior density with `CaliCo` is simple and straightforward.
+
+```{r, echo=TRUE, eval=TRUE, fig.width=5,fig.height=4, fig.align="center"}
+plot(model3,t)
+plot(model4,t)
+```
+
+
 
 ## Define the prior distributions
 
@@ -235,40 +317,43 @@ gaussian <- prior(type.prior="gaussian",opt.prior=list(c(0.5,0.001)))
 plot(gaussian)
 ```
 
-Where the prior function generates a `prior.class` object which contains methods as `plot()` or `print()`. The arguments are `type.prior` and `opt.prior`. The option `opt.prior` contains the specification of the density selected. For example, a Gaussian density will get a vector with its mean and its variance, a Gamma density the scale and the shape. This option is initially a `list` because when several priors are defined, that allows to serated each characteristics. Identically as before, the `plot()` method returns a `ggplot` which can be stored into a variable and then modified by the user. To define sevaral prior densities, the rigth way is illustrated as the following
+For calibration with $\mathcal{M}_1$ and $\mathcal{M}_2$, only `theta` and `var` are calibrated. That means in code calibration of $f_t$ only two prior densities are defined. To define multiple prior densities in `CaliCo`, one can create a vector of characters for the option `type.pior` and a `list` containing the corresponding vectors of the hyperparameters of the distribution. Then in the example:
 
 ```{r, fig.width=4,fig.align='center'}
-priors <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(0.5,0.001),c(5,1)))
-plot(priors$Prior1)
-plot(priors$Prior2)
+pr1 <- prior(type.prior=c("gaussian","gamma"),
+             opt.prior=list(c(11,0.01),c(1,0.1)))
+plot(pr1$Prior1)
+plot(pr1$Prior2)
 ```
 
-The `grid.arrange` function allows to visualize both prior densities at the same time. The variable `priors` stores a list of the prior's number whished defined as a `prior.class` objects.
+The function `prior` in this particular case creates a `list` containing both prior densities. If one is interrested in visualizing the densities, the function `plot`, used as in the previous code chunck, allow to access the `ggplot2` object directly. The `list` contains prior density in the order set in the `prior` function. That means for the example given above, `Prior1` corresponds to the Gaussian density and `Prior2` to the Gamma density (respectively to `theta` density and `var` density).
 
-```{r, echo=TRUE}
-print(priors$Prior1)
+For $\mathcal{M}_3$ and $\mathcal{M}_4$, two additionnal parameters are needed before running calibration. One can define them identically as before.
+
+```{r, fig.width=4,fig.align='center'}
+pr2 <- prior(type.prior=c("gaussian","gamma","unif","gamma"),
+             opt.prior=list(c(11,0.01),c(1,2),c(0,1),c(1,0.1)))
+plot(pr2$Prior2)
+plot(pr2$Prior3)
 ```
 
-```{r, echo=TRUE}
-print(priors$Prior2)
-```
+*In `CaliCo` the order is always defined by `theta` first, then if there is a discrepancy `thetaD` and then the variance of the measurment errors `var`.*
 
+## Run Bayesian calibration
 
-## Run the Bayesian calibration
+Let us recall that if $\mathcal{M}_1$ or $\mathcal{M}_2$ are selected only $\theta$ and $\sigma_{err}^2$ need to be calibrated. If $\mathcal{M}_3$ or $\mathcal{M}_4$ are chosen $\theta$, $\theta_{\delta}$ and $\sigma_{err}^2$ need to be calibrated.
 
-Let us recall that if $\mathcal{M}_1$ or $\mathcal{M}_2$ are selected only $\theta$ and $\sigma_{err}^2$ need to be calibrated. If $\mathcal{M}_3$ or $\mathcal{M}_4$ are chosen $\theta$, $\theta_D$ and $\sigma_{err}^2$ need to be calibrated.
-
-In `CaliCo`, estimation options have to be defined to run the calibration (`opt.estim`). It encompasses a list of the options to run the MCMC:
+In `CaliCo`, estimation options have to be defined to run the calibration (`opt.estim`). It encompasses a list of the options to run the Monte Carlo Markov Chain (MCMC):
 
   * `Ngibbs` the number of Gibbs in the Metropolis within Gibbs algorithm
   * `Nmh` the number of Metropolis Hastings in the Metropolis within Gibbs algorithm
   * `thetaInit` the starting point
-  * `k` the tuning vector of the covariance matrix in the symetric proposition distribtution fot the Metropolis within Gibbs algorithm
+  * `r` the tuning vector of `k` which regulate the covariance matrix in the proposition distribution($k\Sigma$). Each $100$ iteration in the MCMC, $k = k(1-r)$ is realized if the acceptation rate is lower than $20\%$ and $k = k(1+r)$ if the acceptation rate is higher than $50\%$.
   * `sig` the covariance matrix in the symetric proposition distribution
   * `Nchains` the number of MCMC chains (if `Nchains>1` an output called `mcmc` is a `coda` object and can be manipulated to run a Gelman Rubin diagnostic for example)
   * `burnIn` the burn-in to take of the final sample set
 
-Between $\mathcal{M}_1$, $\mathcal{M}_2$ and $\mathcal{M}_3$ and $\mathcal{M}_4$, `opt.estim` is not the same because of the size of `thetaInit`, `k` and `sig`. Indeed, with the discrepancy, the number of parameter to calibrate had increased of two.
+Between $\mathcal{M}_1$, $\mathcal{M}_2$ and $\mathcal{M}_3$ and $\mathcal{M}_4$, `opt.estim` is not the same because of the size of `thetaInit` and `sig`. Indeed, with the discrepancy, the number of parameter to calibrate had increased of two. The parameter `r` can remain the same between the models.
   
 The function `calibrate` is the function that run the Bayesian calibration. It takes three inputs:
 
@@ -276,105 +361,89 @@ The function `calibrate` is the function that run the Bayesian calibration. It t
   * `pr` the `prior.class` object generated by the function `prior`
   * `opt.estim` the estimation options
   
-```{r, echo=TRUE}
-# Definition of the estimation options for the model 1 and model 2
-opt.estim1=list(Ngibbs=1000,Nmh=3000,thetaInit=c(11,0.01),k=c(1e-4,1e-4),sig=diag(2),Nchains=1,burnIn=1000)
-opt.estim2=list(Ngibbs=2000,Nmh=4000,thetaInit=c(11,0.01),k=c(1e-5,1e-5),sig=diag(2),Nchains=1,burnIn=1000)
-
-# Generate the prior densities
-pr1 <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(11,0.5),c(2,0.01)))
-
-# Run the Bayesian Calibration for the first
-mdfit1 <- calibrate(model1,pr1,opt.estim1)
-```
-```{r, echo=TRUE}
-# Run the Bayesian Calibration for the first
-mdfit2 <- calibrate(model2,pr1,opt.estim2)
+```{r, echo=TRUE, results="hide"}
+mdfit1 <- calibrate(model1,pr1,
+                    opt.estim = list(Ngibbs=200,Nmh=400,thetaInit=c(11,0.01),
+                                     r=c(0.3,0.3),sig=diag(2),Nchains=1,burnIn=100))
 ```
 
+One can easily access to a summary of the results by running a `print(mdfit1)`.
 
-`mdfit1` and `mdfit2` are two `R6` objects from `calibrate.class` which contain also two main methods (`plot()` and `print()`). The `print()` method displays the model that we called, the acceptation rate for the Metropolis within Gibbs algortihm, the acceptation rate of the Metropolis Hastings algorithm, the maximum a posteriori and the mean a posteriori.
-
-
-```{r, echo=TRUE}
+```{r,echo=TRUE}
 print(mdfit1)
 ```
-```{r, echo=TRUE}
-print(mdfit2)
-```
-The method `plot()` can be used with only the `calibrate.class` object but can also take different inputs:
 
- * `mdfit` the `calibrate.class` object from `calibrate` function.
- * `graph` the vector of the graphs to be displayed (by default all the graphs are displayed)
-  + "acf" displays the correlation graph of the Metropolis Hastings algorithms for each parameters without the burn-in
-  + "chains" displays the Metropolis Hastings chains without the burn-in
-  + "densities" displays prior and posterior densities
-  + "output" displays the output of the statistical model choosen with calibrated values
- * `select.X` is the option that allows to display the output graph by selecting an axis. For example if one works with several forced variables, one can choose to plot the results function of a particular forced variable, otherwise an error will be displayed.
+The summary recalls the function used, the selected model but indicates the rates of the algorithms. Then, the Maximum A Posteriori (MAP) and the mean a posteriori are also plotted.
 
-One can store in a variable `t` all the plot and get access to each of the plot using `t[[1]][[.]]` for the acf of the parameter `.`, `t[[2]][[.]]` for the MCMC chain of the parameter `.`, `t[[3]][[.]]` for the comparison of the densities a priori and a posteriori of the parameter `.` and `t[[4]]` for the result of the calibration.
+One can also have access to a visual representation of the results proposed by `CaliCo`. With the `plot` function, one can display a serie of graphs. Similarly, as the `plot` function used to display the model, the second argument is required and is the x-axis.
 
-```{r, echo=TRUE, fig.width=4}
-plot(mdfit1)[[4]]
+```{r, echo=TRUE,fig.width=7,fig.height=5,fig.align='center'}
+plot(mdfit1,t)
 ```
 
+With only one parameter to calibrate in `theta`, the `Warning` indicates that no correlation graph is available. As a matter of fact, a second group of graphs in given with the previous ones which is correlation plot between each parameters `theta` with the corresponding densities a priori and a posteriori. One can control this output with an additionnal option `graph`:
 
-If we get back to our initial value we can plot on the same graph, the initial belief:
+  * if `graph="chains"`: only the table of the autocorrelation, chains points and densities a priori and a posteriori is produced.
+  * if `graph="corr"`: only the table of the correlation graph between each parameter is displayed.
+  * if `graph="result"`: only the result on the quantity of interest is given..
+  * if `graph=NULL`: no graphs are produced automatically.
 
-```{r, echo=TRUE, fig.width=6}
-Yt <- code(X,11)
-gdata <- data.frame(y=Yt,x=X,type="Theoretical results")
+The serie of graphs is just a display proposition by `CaliCo`. One can elect the specific graph he want to plot. All the graph are `ggplot2` objects and are generated in a `list`. For example, if one runs `p <- plot(mdfit1,t)`, `p` is a `list` containing several elements: 
 
-plot(mdfit1)[[4]]+geom_line(aes(x,y,colour=type), gdata)+ggtitle("Results for Model1")+xlab("x")+ylab("y")+theme(legend.position="right",legend.text=element_text(size = '7'))
-```
+  * `ACF` a `list` of all autocorrelation graphs in the chains for each variable
+  * `MCMC` a `list` of all the MCMC chains for each variable
+  * `corrplot` a `list` of all correlation graphs between each variable
+  * `dens` a `list` of all density a priori and a posteriori graphs for each variable
+  * `out` the result on the quantity of interest
 
-The same results are available for $\mathcal{M}_2$ which is not using the real code but the Gaussian process instead:
-
-```{r, echo=TRUE, fig.width=6}
-t2 <- mdfit2$plot()
-Yt <- code(X,11)
-gdata <- data.frame(y=Yt,x=X,type="Theoretical results")
-
-t2[[4]]+geom_line(aes(x,y,colour=type), gdata)+ggtitle("Results for Model2")+xlab("x")+ylab("y")+theme(legend.position="right",legend.text=element_text(size = '7'))
-```
-
-
-For $\mathcal{M}_3$ and $\mathcal{M}_4$, the calibration is done in a similar way, exept for the `opt.estim` option which has to take into account the parameter of the discrepancy. The function `calibrate` will find the "best-fitting" values of the nuissance parameters of the discrepancy at the same time than the other parameters.
-
- 
-```{r, echo=TRUE}
-# Definition of the estimation options for the model 3 and model 4
-opt.estim2=list(Ngibbs=1000,Nmh=3000,thetaInit=c(11,0.5,0.01,0.01),k=c(1e-5,1e-6,1e-7,1e-7),sig=diag(4),Nchains=1,burnIn=1000)
-
-# Generate the prior densities
-pr2 <- prior(type.prior=c("gaussian","gamma","unif","gamma"),opt.prior=list(c(11,0.5),c(1,0.5),c(0,1),c(2,0.01)))
-
-# Run the Bayesian Calibration for the third
-mdfit3 <- calibrate(model3,pr2,opt.estim2)
-```
+These `list` of graphs are also only propositions. One is free to load the generated MCMC chain (without the burn-in sample) and produces the graphical representation he wants. This operation is done by the function `chain`:
 
 ```{r, echo=TRUE}
-# Run the Bayesian Calibration for the fourth model
-mdfit4 <- calibrate(model4,pr2,opt.estim2)
+mcmc <- chain(mdfit1)
+head(mcmc)
+```
+
+To also quickly get the estimators of the chain, the function `estimators` return the mean a posteriori and the MAP:
+
+```{r, echo=TRUE}
+Estimators <- estimators(mdfit1)
+print(Estimators)
+```
+
+The calibration procedure is identical for $\mathcal{M}_2$. However, for $\mathcal{M}_3$ and $\mathcal{M}_4$ more parameters are to calibrate. That means the option `opt.estim` needs to be adapted. For example, in $\mathcal{M}_4$:
+
+```{r, echo=TRUE, eval=FALSE, results="hide"}
+mdfit4 <- calibrate(model4,pr2,
+                    opt.estim = list(Ngibbs=1000,Nmh=3000,thetaInit=c(11,2,0.5,0.01),
+                                      r=c(0.3,0.3),sig=diag(4),Nchains=1,burnIn=1000))
+```
+
+*The computing time for calibrating $\mathcal{M}_3$ and $\mathcal{M}_4$ is much longer than calibrating $\mathcal{M}_1$ and $\mathcal{M}_2$. The matrix inversion in the model's likelihood is reponsible of the increase of time. Indeed, from $\mathcal{M}_1$ to $\mathcal{M}_4$ the complexity of the covariance matrix in the likelihood increases.*
+
+From this point, when calibration is done, all the functions used above: `estimators`, `chain`, `plot`and `print` are accessible.
+
+## Run Bayesian forecasting
+
+`CaliCo` also allows the user to access a prediction on a new data set regarding the already run calibration. In the example, let us consider that one is interested in visualizing what happen on $\[1,1.5\]$ interval. The function `forecast` simply gets two inputs which are the calibrated object `mdfit` and the new data set. In the example if `x.new = seq(1,1.5,length.out=10)` then the argument in the function `forecast` is `x=x.new`.
+
+```{r, echo=TRUE}
+x.new <- seq(1,1.5,length.out=10)
+fr <- forecast(mdfit1,x.new)
+```
+
+The function `plot` gives a visual representation on the predicted values for the chosen statistical model. The x-axis given has to be the original x-axis used for calibration extended with the x-axis corresponding to the new data set.
+
+
+```{r, echo=TRUE, eval=TRUE,fig.width=5,fig.height=4,fig.align='center'}
+plot(fr,c(t,x.new))
 ```
 
 
-*The computing time for calibrating $\mathcal{M}_3$ and $\mathcal{M}_4$ is much longer than calibrating $\mathcal{M}_1$ and $\mathcal{M}_2$. The matrix inversion in the model's likelihood which is reponsible of the time increase. From $\mathcal{M}_1$ to $\mathcal{M}_4$ the complexity of covariance matrix in the likelihood increases*
+The blue line corresponds to the predicted values and the credibility intervals at $95\%$ are also given depending on the chosen model.
 
-The same methods are availble and the results can be displayed the same way than before:
+## Conclusion
 
-```{r, echo=TRUE, fig.width=6}
-t3 <- plot(mdfit3)
-t4 <- plot(mdfit4)
-Yt <- code(X,11)
-gdata <- data.frame(y=Yt,x=X,type="Theoretical results")
+This vignette illustrates the use of `CaliCo` in a simple example. Although, for a multidimensional test, the reader can try out the examples given in the help `?model` of `?calibrate`. The aim of the package is to be adaptive to each industrial situation and makes Bayesian calibration accessible.
 
-t3[[4]]+geom_line(aes(x,y,colour=type), gdata)+ggtitle("Results for Model3")+xlab("x")+ylab("y")+theme(legend.position="right",legend.text=element_text(size = '7'))
-t4[[4]]+geom_line(aes(x,y,colour=type), gdata)+ggtitle("Results for Model4")+xlab("x")+ylab("y")+theme(legend.position="right",legend.text=element_text(size = '7'))
-```
+## References
 
-### Conclusion
-
-`CaliCo` is a package that allows to calibrate easily a computer code from experimental data. It helps the user to handle easily Bayesian calibration with a stepwise procedure and displays quickly the results in a `ggplot` which allows one to make any changes on each plot. For any multidimensional question, the reader is referred to the example of `?calibrate`.
-
-### References

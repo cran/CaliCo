@@ -24,5 +24,6 @@ multivariate(n = 1, mu, Sigma, tol = 1e-06, empirical = FALSE,
 If n = 1 a vector of the same length as mu, otherwise an n by length(mu) matrix with one sample in each row.
 }
 \description{
-The matrix decomposition is done via eigen; although a Choleski decomposition might be faster, the eigendecomposition is stabler.
+The matrix decomposition is done via eigen; although a Choleski decomposition might be faster,
+the eigen decomposition is stabler.
 }

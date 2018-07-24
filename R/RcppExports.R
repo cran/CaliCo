@@ -3,19 +3,19 @@
 
 #' C++ implementation of the algorithm for parameter calibration (without discrepancy)
 #'
-#' Run a Metropolis Hastings within Gibbs algortithm and a Metropolis Hastings algorithm with the covariance matrix estimated on the
+#' Run a Metropolis Hastings within Gibbs algorithm and a Metropolis Hastings algorithm with the covariance matrix estimated on the
 #' the sample set generated in the Metropolis within Gibbs. This algorithm is suitable only for models without discrepancy.
 #'
 #' @param Ngibbs the number of iteration in the Metropolis within Gibbs
 #' @param Nmh the number of iteration in the Metropolis Hastings
 #' @param theta_init the starting point
-#' @param k the tuning vector of the step in the proposition distribution
-#' @param SIGMA the covaraince of the proposition distribution
+#' @param r regulation percentage in the modification of the k in the Metropolis Hastings
+#' @param SIGMA the covariance of the proposition distribution
 #' @param Yf the vector of recorded data
 #' @param binf the lower bound of the parameters to calibrate
 #' @param bsup the upper bound of the parameters to calibrate
-#' @param LogTest the log posterior density disbution
-#' @param stream (default=1) if stream=0 the progress bar is desabled
+#' @param LogTest the log posterior density distribution
+#' @param stream (default=1) if stream=0 the progress bar is disabled
 #' @return list of outputs: \itemize{
 #' \item PHIwg the points of the Metropolis within Gibbs algorithm in the transformed space
 #' \item PHI the points of the Metropolis Hastings algorithm in the transformed space
@@ -28,25 +28,25 @@
 #' \item Likeli the likelihood computed at each iteration of the Metropolis Hastings algorithm
 #'  }
 #' @export
-MetropolisHastingsCpp <- function(Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream) {
-    .Call('_CaliCo_MetropolisHastingsCpp', PACKAGE = 'CaliCo', Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream)
+MetropolisHastingsCpp <- function(Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup, LogTest, stream) {
+    .Call('_CaliCo_MetropolisHastingsCpp', PACKAGE = 'CaliCo', Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup, LogTest, stream)
 }
 
 #' C++ implementation of the algorithm for parameter calibration (with discrepancy)
 #'
-#' Run a Metropolis Hastings within Gibbs algortithm and a Metropolis Hastings algorithm with the covariance matrix estimated on the
+#' Run a Metropolis Hastings within Gibbs algorithm and a Metropolis Hastings algorithm with the covariance matrix estimated on the
 #' the sample set generated in the Metropolis within Gibbs. This algorithm is suitable only for models with discrepancy.
 #'
 #' @param Ngibbs the number of iteration in the Metropolis within Gibbs
 #' @param Nmh the number of iteration in the Metropolis Hastings
 #' @param theta_init the starting point
-#' @param k the tuning vector of the step in the proposition distribution
-#' @param SIGMA the covaraince of the proposition distribution
+#' @param r regulation percentage in the modification of the k
+#' @param SIGMA the covariance of the proposition distribution
 #' @param Yf the vector of recorded data
 #' @param binf the lower bound of the parameters to calibrate
 #' @param bsup the upper bound of the parameters to calibrate
-#' @param LogTest the log posterior density disbution
-#' @param stream (default=1) if stream=0 the progress bar is desabled
+#' @param LogTest the log posterior density distribution
+#' @param stream (default=1) if stream=0 the progress bar is disabled
 #' @return list of outputs: \itemize{
 #' \item PHIwg the points of the Metropolis within Gibbs algorithm in the transformed space
 #' \item PHI the points of the Metropolis Hastings algorithm in the transformed space
@@ -59,7 +59,7 @@ MetropolisHastingsCpp <- function(Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, b
 #' \item Likeli the likelihood computed at each iteration of the Metropolis Hastings algorithm
 #'  }
 #' @export
-MetropolisHastingsCppD <- function(Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream) {
-    .Call('_CaliCo_MetropolisHastingsCppD', PACKAGE = 'CaliCo', Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream)
+MetropolisHastingsCppD <- function(Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup, LogTest, stream) {
+    .Call('_CaliCo_MetropolisHastingsCppD', PACKAGE = 'CaliCo', Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup, LogTest, stream)
 }
 

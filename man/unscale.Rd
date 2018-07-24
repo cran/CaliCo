@@ -15,7 +15,7 @@ unscale(M, binf, bsup, diag = FALSE, sym = FALSE)
 
 \item{diag}{default value False if we want to unscale the whole matrix}
 
-\item{sym}{default value False if we do not have a symetric matrix}
+\item{sym}{default value False if we do not have a symmetric matrix}
 }
 \value{
 the unscaled vector or matrix

@@ -3,7 +3,7 @@
 \docType{data}
 \name{calibrate.class}
 \alias{calibrate.class}
-\title{A Reference Class to generates differents \code{calibrate.class} objects}
+\title{A Reference Class to generates different \code{calibrate.class} objects}
 \format{An object of class \code{R6ClassGenerator} of length 24.}
 \usage{
 calibrate.class

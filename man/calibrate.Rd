@@ -4,45 +4,49 @@
 \alias{calibrate}
 \title{Generates \code{\link{calibrate.class}} objects}
 \usage{
-calibrate(md, pr, opt.estim, opt.valid = NULL, onlyCV = FALSE)
+calibrate(md, pr, opt.estim, opt.valid = NULL)
 }
 \arguments{
 \item{md}{a \code{\link{model.class}} object}
 
 \item{pr}{a \code{\link{prior.class}} object}
 
-\item{opt.estim}{estimation options \itemize{\item{Ngibbs}{Number of iteration of the algorithm Metropolis within Gibbs}
+\item{opt.estim}{estimation options \itemize{\item{Ngibbs}{ Number of iteration of the algorithm
+Metropolis within Gibbs}
 \item{Nmh}{ Number of iteration of the Metropolis Hastings algorithm}
 \item{thetaInit}{ Initial point}
-\item{k}{ Tuning parameter for the covariance matrix sig}
+\item{r}{ regulation percentage in the modification of the k in the Metropolis Hastings}
 \item{sig}{ Covariance matrix for the proposition distribution (\eqn{k*sig})}
-\item{Nchains}{ Number of MCMC chains to run (if Nchain>1 an output is created called mcmc which is a coda object)}
+\item{Nchains}{ Number of MCMC chains to run (if Nchain>1 an output is created called mcmc which
+ is a coda object \code{\link{codamenu}})}
 \item{burnIn}{ Number of iteration to withdraw}
 }}
 
-\item{opt.valid}{list of cross validation options (default opt.valid=FALSE)\itemize{
+\item{opt.valid}{list of cross validation options (default value opt.valid=NULL)\itemize{
 \item{nCV}{ Number of iterations for the cross validation}
-\item{type.valid}{ Type of cross validation selected. "loo" (leave one out) is the only method emplemented so far.}
+\item{type.valid}{ Type of cross validation selected. "loo" (leave one out) is the only method
+ emplemented so far.}
 }}
-
-\item{onlyCV}{if TRUE run the cross validation only (default onlyCV=FALSE)}
 }
 \value{
 \code{calibrate} returns a \code{\link{calibrate.class}} object. Two main methods are available:
-\itemize{\item{plot()}{ display the probability density of the prior with different options:}
+\itemize{\item{plot(mdfit, x, graph)}{ displays a series of graphs (ACF, MCMC, density a priori vs a posteriori
+, correlation between parameters, results on the quantify of interest, etc..) or return a list with all
+the graphs:}
 \itemize{
-\item {mdfit}{The calibrated model (a \code{\link{calibrate.class}} object)}
-\item {graph}{ The vector of the graph wanted. By default all the graph are displayed and graph=c("acf","chains","densities","output").
-"acf" displays the correlation graph of the MCMC chains, "chains" plot the chains, "densities" shows the comparison of the
-densities a priori and a posteriori, and "output" displays the output of the code with the calibrated one and its credibility
-interval.}
-\item {select.X}{ When the number of X is >1, this option has to be activated to display the output plot. select.X
-allows to choose one X for the x scale in the output plot}}
-\item{print()}{ return the main information concerning the estim.class object}}
+\item {mdfit}{ The calibrated model (a \code{\link{calibrate.class}} object)}
+\item {x}{ The x-axis}
+\item {graph}{ Allows to select the wanted display. By default all the layout pannel graphs are displayed and
+\code{graph="all"}. If \code{graph="chains"}, only the layout of the autocorrelation, chains points and densities
+ a priori and a posteriori is produced. If \code{graph="corr"}, only the layout of the correlation graph between
+  each parameter is displayed. If \code{graph="result"}, only the result on the quantity of interest is given.
+  If \code{graph=NULL}, no graphs are produced automatically.}}
+\item{print(mdfit)}{ returns the main information concerning the \code{\link{calibrate.class}} object}}
 }
 \description{
-\code{calibration} is a function that allows us to generate a \code{\link{calibrate.class}} class in which the estimation is
-done from a \code{\link{model.class}} and a \code{\link{prior.class}} objects.
+\code{calibrate} is a function that allows to generate a \code{\link{calibrate.class}}
+ class in which the estimation is
+done for a defined \code{\link{model.class}} and \code{\link{prior.class}} objects.
 }
 \examples{
 \dontrun{
@@ -61,18 +65,18 @@ md <- model(code,X,Yexp,"model1")
 pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
 list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
 ###### Definition of the calibration options
-opt.estim=list(Ngibbs=200,Nmh=400,thetaInit=c(1,1,11,0.1),k=c(6e-3,1e-3,1e-5,1e-3),
+opt.estim=list(Ngibbs=200,Nmh=400,thetaInit=c(1,1,11,0.1),r=c(0.3,0.3),
 sig=diag(4),Nchains=1,burnIn=100)
 ###### Run the calibration
 mdfit <- calibrate(md,pr,opt.estim)
 ####### The plot generated is a list of ggplot
-p <- plot(mdfit,select.X=X[,1])
-p$output
+p <- plot(mdfit,X[,1])
+p$out
 print(mdfit)
 }
 }
 \seealso{
-\code{\link{prior}},\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
+\code{\link{prior}}, \code{\link{calibrate}}, \code{\link{forecast}}, \code{\link{sequentialDesign}}
 }
 \author{
 M. Carmassi

@@ -4,9 +4,7 @@
 \alias{model}
 \title{Generates \code{\link{model.class}} objects.}
 \usage{
-model(code, X, Yexp, model = "model1", opt.emul = list(p = 1, n.emul = 100,
-  type = "matern5_2", binf = 0, bsup = 1, DOE = NULL),
-  opt.disc = list(kernel.type = NULL))
+model(code, X, Yexp, model = "model1", ...)
 }
 \arguments{
 \item{code}{the computational code (function of X and theta)}
@@ -16,29 +14,17 @@ model(code, X, Yexp, model = "model1", opt.emul = list(p = 1, n.emul = 100,
 \item{Yexp}{the vector of the experiments}
 
 \item{model}{string of the model chosen ("model1","model2","model3","model4")
-by default "model1" is choosen. See details for precisions.}
+by default "model1" is chosen. See details for further clarifications}
 
-\item{opt.emul}{is an option list containing characteristics about emulation option. \itemize{
-\item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
-\item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
-\item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
-\item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
-\item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}
-\item{\strong{DOE}{ design of experiments for the surrogate (default value NULL). If NULL the DOE is automatically
-generated as a maximin LHS}}
-}}
-
-\item{opt.disc}{is an option list containing characteristics on the discrepancy \itemize{
-\item{\strong{kernel.type}{ see \code{\link{kernel.fun}} for further details}}
-}}
+\item{...}{additional options (see details section)}
 }
 \value{
 \code{model} returns a \code{model.class} object. This class contains two main methods:
 \itemize{
-\item{plot(mdfit,\eqn{\Theta},var, points=FALSE)}{ this metod generates the plot for a new
-\eqn{\Theta}, \eqn{\sigma^2} and a new set of data. The option points allows to vizualize the points from
-the Design Of Experiments (DOE) used for establishing the surrogate.}
-\item{print()}{ this method presents the main information about the model.}
+\item{plot(model,x)}{ this method generates the plot for a new \eqn{\Theta}, \eqn{\Theta_D} (for model3 and model4),
+ \eqn{\sigma^2}. The parameter values need to be added to the model with the pipe \code{\%<\%}. The argument \code{x}
+ represents the x-axis and have to be specified to produce a plot.}
+\item{print(model)}{ this method presents several pieces of information about the model.}
 }
 }
 \description{
@@ -57,51 +43,109 @@ The different statistical models are: \itemize{\item{Model1:
 where \eqn{for i in [1,\dots,n] \epsilon(x_i)~N(0,\sigma^2)}, \eqn{F(.,.)~PG(m_1(.,.),c_1{(.,.),(.,.)})}
  and \eqn{\delta(.)~PG(m_2(.),c_2(.,.))}.
 There is four kind of models in calibration. They are properly defined in [1].
+
+To establish a Gaussian process three options are available:
+\itemize{
+\item \strong{opt.gp} is an option list containing the parameters to establish the surrogate (only for model2 and model4).
+\itemize{
+\item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
+\item{\strong{DOE}{ design of experiments for the surrogate (default value NULL). If NULL the DOE is automatically
+generated with the \strong{opt.emul} option.}}
+}
+\item \strong{opt.emul} is an option list containing characteristics about emulation option (only for model2 and model4).
+\itemize{
+\item{\strong{p}}{ the number of parameter in the model (default value 1)}
+\item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
+\item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
+\item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}}
+\item \strong{opt.sim} is an option list containing the design and corresponding outputs of the code, in the case
+where no numerical code is available (only for model2 and model4).\itemize{
+\item{\strong{Ysim}}{ Output of the code}
+\item{\strong{DOEsim}}{ DOE corresponding to the output of the code}}
+}
+To add a discrepancy in the model, the option opt.disc must be added:
+\itemize{
+\item \strong{opt.disc} is an option list containing characteristics on the discrepancy (only for model3 and model4)
+\itemize{
+\item{\strong{kernel.type}{ see \code{\link{kernel.fun}} for further details}}
+}
+}
 }
 \examples{
 \dontrun{
 ###### The code to calibrate
-X <- cbind(seq(0,1,length.out=4),seq(0,1,length.out=4))
+X <- cbind(seq(0,1,length.out=5),seq(0,1,length.out=5))
 code <- function(X,theta)
 {
   return((6*X[,1]*theta[2]-2)^2*theta[1]*sin(theta[3]*X[,2]-4))
 }
-Yexp <- code(X,c(1,1,11))+rnorm(4,0,0.1)
+Yexp <- code(X,c(1,1,11))+rnorm(5,0,0.1)
 
 ###### For the first model
 ### Generate the model
 model1 <- model(code,X,Yexp,"model1")
 ### Plot the results with the first column of X
-plot(model1,c(1,1,11),0.1,select.X=X[,1])
+model1 \%<\% list(theta=c(1,1,11),var=0.01)
+plot(model1,X[,1],CI="err")
+
 ### Summury of the foo class generated
 print(model1)
 
 ###### For the second model
-### Generate the model with setup for the Gaussian Process
+### code function is available, no DOE generated upstream
 binf <- c(0.9,0.9,10.5)
 bsup <- c(1.1,1.1,11.5)
-opt.emul <- list(p=3,n.emul=10,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
-model2 <- model(code,X,Yexp,"model2",opt.emul)
+opt.gp <- list(type="matern5_2", DOE=NULL)
+opt.emul <- list(p=3,n.emul=150,binf=binf,bsup=bsup,type="maximinLHS")
+model2 <- model(code,X,Yexp,"model2",
+                opt.gp=opt.gp,
+                opt.emul=opt.emul)
+model2 \%<\% list(theta=c(1,1,11),var=0.1)
 ### Plot the model
-plot(model2,c(1,1,11),0.1,select.X=X[,1])
+plot(model2,X[,1])
 
-### Use your own design of experiments
-DOE <- DiceDesign::lhsDesign(10,5)$design
+### code function is available and use a specific DOE
+DOE <- DiceDesign::lhsDesign(20,5)$design
 DOE[,3:5] <- unscale(DOE[,3:5],binf,bsup)
-opt.emul <- list(p=3,n.emul=10,type="matern5_2",binf=c(0.9,0.9,10.5),bsup=c(1.1,1.1,11.5),DOE=DOE)
-model2 <- model(code,X,Yexp,"model2",opt.emul)
-plot(model2, theta=c(1,1,11),var=0.1,points=FALSE,select.X=X[,1])
+
+opt.gp <- list(type="matern5_2", DOE=DOE)
+model2 <- model(code,X,Yexp,"model2",
+                opt.gp=opt.gp)
+model2 \%<\% list(theta=c(1,1,11),var=0.1)
+plot(model2,X[,1])
+
+### no code function but DOE and code output available
+Ysim <- matrix(nr=20,nc=1)
+for (i in 1:20)
+{
+  covariates <- as.matrix(DOE[i,1:2])
+  dim(covariates) <- c(1,2)
+  Ysim[i] <- code(covariates,DOE[i,3:5])
+}
+
+opt.sim <- list(Ysim=Ysim,DOEsim=DOE)
+opt.gp <- list(type="matern5_2", DOE=NULL)
+model2 <- model(code=NULL,X,Yexp,"model2",
+                opt.gp=opt.gp,
+                opt.sim=opt.sim)
+model2 \%<\% list(theta=c(1,1,11),var=0.1)
+plot(model2,X[,1])
 
 ###### For the third model
-model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="matern5_2"))
-plot(model3,theta=c(1,1,11),thetaD=c(0,0.01),var=0.01,select.X=X[,1])
+model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="gauss"))
+model3 \%<\% list(theta=c(1,1,11),thetaD=c(20,0.5),var=0.1)
+plot(model3,X[,1],CI="err")
 print(model3)
 
 }
 
 }
+\references{
+[1] CARMASSI, Mathieu, BARBILLON, Pierre, KELLER, Merlin, et al. Bayesian calibration of
+ a numerical code for prediction. arXiv preprint arXiv:1801.01810, 2018.
+}
 \seealso{
-\code{\link{prior}},\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
+\code{\link{prior}}, \code{\link{calibrate}}, \code{\link{forecast}}, \code{\link{sequentialDesign}}
 }
 \author{
 M. Carmassi
